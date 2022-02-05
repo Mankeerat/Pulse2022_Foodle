@@ -11,15 +11,14 @@ import board
 import digitalio
 import adafruit_character_lcd.character_lcd as characterlcd
 
-#send_url = "http://api.ipstack.com/check?access_key=9652f32a1c57f789156e98e414aaf0ec"
-#geo_req = requests.get(send_url)
-#geo_json = json.loads(geo_req.text)
-#latitude12 = geo_json['latitude']
-#longitude12 = geo_json['longitude']
-#my_location = geo_json['city']
-latitude12 = 1
-longitude12 = 1
-my_location = "Urbana"
+send_url = "http://api.ipstack.com/check?access_key=9652f32a1c57f789156e98e414aaf0ec"
+geo_req = requests.get(send_url)
+geo_json = json.loads(geo_req.text)
+latitude12 = geo_json['latitude']
+longitude12 = geo_json['longitude']
+my_location = geo_json['city']
+
+#my_location = "Urbana"
 #print(latitude12)
 #print(longitude12)
 print(my_location)
@@ -89,7 +88,7 @@ i = 0
 while i == 0:
     lcd.clear()
     time.sleep(0.5)
-    dist_to_del = calc_dist(t_choice.lat, t_choice.lon, lat11, long11)
+    dist_to_del = calc_dist(t_choice.lat, t_choice.lon, t_choice.lat, t_choice.lon)
     #dist_to_del = calc_dist(t_choice.lat, t_choice.lon, lat11, long11)
     lcd_line_1 = "Dist to Foodle:\n"
     lcd_line_2 = str(int(dist_to_del))
