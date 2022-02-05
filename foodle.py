@@ -2,54 +2,26 @@ import numpy as np
 import random as rand
 import requests
 import json
-import Rpi.GPIO as GPIO
+import RPi.GPIO as GPIO
 import time
-from RPLCD import CharLD
+from subprocess import Popen, PIPE
+from time import sleep
+from datetime import datetime
+import board
+import digitalio
+import adafruit_character_lcd.character_lcd as characterlcd
 
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(14, GPIO.OUT)
-GPIO.setup(15, GPIO.OUT)
-GPIO.setup(23, GPIO.OUT)
-GPIO.setup(8, GPIO.OUT)
-GPIO.setup(7, GPIO.OUT)
-GPIO.setup(18, GPIO.OUT)
-GPIO.setup(24, GPIO.OUT)
-GPIO.setup(25, GPIO.OUT)
-GPIO.setup(12, GPIO.OUT)
-GPIO.setup(16, GPIO.OUT)
-
-Green1 = GPIO.PWM(14, 100)
-Green2 = GPIO.PWM(15, 100)
-Green3 = GPIO.PWM(23, 100)
-Green4 = GPIO.PWM(8, 100)
-Green5 = GPIO.PWM(7, 100)
-Red1 = GPIO.PWM(5, 100)
-Red2 = GPIO.PWM(6, 100)
-Red3 = GPIO.PWM(13, 100)
-Red4 = GPIO.PWM(16, 100)
-Red5 = GPIO.PWM(20, 100)
-
-Green1.start(10)
-Green1.start(10)
-Green1.start(10)
-Green1.start(10)
-Green1.start(10)
-Red1.start(10)
-Red1.start(10)
-Red1.start(10)
-Red1.start(10)
-Red1.start(10)
-
-
-send_url = "http://api.ipstack.com/check?access_key=9652f32a1c57f789156e98e414aaf0ec"
-geo_req = requests.get(send_url)
-geo_json = json.loads(geo_req.text)
-latitude12 = geo_json['latitude']
-longitude12 = geo_json['longitude']
-my_location = geo_json['city']
-
-print(latitude12)
-print(longitude12)
+#send_url = "http://api.ipstack.com/check?access_key=9652f32a1c57f789156e98e414aaf0ec"
+#geo_req = requests.get(send_url)
+#geo_json = json.loads(geo_req.text)
+#latitude12 = geo_json['latitude']
+#longitude12 = geo_json['longitude']
+#my_location = geo_json['city']
+latitude12 = 1
+longitude12 = 1
+my_location = "Urbana"
+#print(latitude12)
+#print(longitude12)
 print(my_location)
 
 #9652f32a1c57f789156e98e414aaf0ec
@@ -77,7 +49,7 @@ list = []
 
 list.append(rest("Panda_Express", 40.1104272667539, -88.2290566668243))
 list.append(rest("Sakanaya", 40.1101454940592, -88.2330757751514))
-list.append(rest("Burrito_king", 40.1103987963004, 88.2327156257938))
+list.append(rest("Burrito_king", 40.1103987963004, -88.2327156257938))
 list.append(rest("Bangkok_Thai", 40.1104023831122, -88.2324187391523))
 list.append(rest("Maize", 40.1103992566387, -88.2389141470471))
 list.append(rest("Jurrasic_grill", 40.1103900285138, -88.2331106442126))
@@ -90,152 +62,45 @@ t_choice = rand.choice(list)
 
 print(t_choice.name, t_choice.lat, t_choice.lon) 
 
-dist_to_del = calc_dist(t_choice.lat, t_choice.lon, latitude12, longitude12)
-print(dist_to_del)
+lat11 = 40.115058255108245
+long11 = -88.22856412577781
+dist_to_del = calc_dist(t_choice.lat, t_choice.lon, lat11, long11)
+print("Distance to today's foodle",dist_to_del)
 
-lcd = CharLD(cols = 16, row = 2, pin_rs = 37, pin_e = 35, pins_data = [33, 31, 29, 23])
+# Modify this if you have a different sized character LCD
+lcd_columns = 16
+lcd_rows = 2
+
+# compatible with all versions of RPI as of Jan. 2019
+# v1 - v3B+
+lcd_rs = digitalio.DigitalInOut(board.D22)
+lcd_en = digitalio.DigitalInOut(board.D17)
+lcd_d4 = digitalio.DigitalInOut(board.D25)
+lcd_d5 = digitalio.DigitalInOut(board.D24)
+lcd_d6 = digitalio.DigitalInOut(board.D23)
+lcd_d7 = digitalio.DigitalInOut(board.D18)
+
+# Initialise the lcd class
+lcd = characterlcd.Character_LCD_Mono(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6,
+                                      lcd_d7, lcd_columns, lcd_rows)
+
+
 i = 0
 while i == 0:
-  dist_to_del = calc_dist(t_choice.lat, t_choice.lon, latitude12, longitude12)
-  lcd.write_string(u"Foodle Time")
-  time.sleep(2)
-  lcd.clear()
-  lcd.write_string(u"Dist to Deliciousness")
-  lcd.cursor_pos = (1,0)
-  lcd.write_string(dist_to_del)
-
-  if dist_to_del<= 300:
-    Green1.ChangeDutyCycle(100)
-    Green2.ChangeDutyCycle(100)
-    Green3.ChangeDutyCycle(95)
-    Green4.ChangeDutyCycle(90)
-    Green5.ChangeDutyCycle(80)
-    Red1.ChangeDutyCycle(15)
-    Red2.ChangeDutyCycle(10)
-    Red3.ChangeDutyCycle(0)
-    Red4.ChangeDutyCycle(0)
-    Red5.ChangeDutyCycle(0) 
-    i = 1
-    print("foodle!")
-    break
+    lcd.clear()
+    time.sleep(0.5)
+    dist_to_del = calc_dist(t_choice.lat, t_choice.lon, lat11, long11)
+    #dist_to_del = calc_dist(t_choice.lat, t_choice.lon, lat11, long11)
+    lcd_line_1 = "Dist to Foodle:\n"
+    lcd_line_2 = str(int(dist_to_del))
+    lcd.message = lcd_line_1 + lcd_line_2 + " ft"
     
-  elif dist_to_del<= 600 and dist_to_del> 300:
-    Green1.ChangeDutyCycle(95)
-    Green2.ChangeDutyCycle(90)
-    Green3.ChangeDutyCycle(85)
-    Green4.ChangeDutyCycle(85)
-    Green5.ChangeDutyCycle(80)
-    Red1.ChangeDutyCycle(15)
-    Red2.ChangeDutyCycle(15)
-    Red3.ChangeDutyCycle(10)
-    Red4.ChangeDutyCycle(0)
-    Red5.ChangeDutyCycle(0) 
+    if dist_to_del<= 300:
+        i = 1
+        print("foodle!")
+        lcd_line_1 = "You have found\n"
+        lcd_line_2 = "Today's Foodle!"
+        lcd.message = lcd_line_1 + lcd_line_2
+        break
     
-  elif dist_to_del<= 900 and dist_to_del> 600 :
-    Green1.ChangeDutyCycle(85)
-    Green2.ChangeDutyCycle(85)
-    Green3.ChangeDutyCycle(80)
-    Green4.ChangeDutyCycle(80)
-    Green5.ChangeDutyCycle(75)
-    Red1.ChangeDutyCycle(20)
-    Red2.ChangeDutyCycle(20)
-    Red3.ChangeDutyCycle(15)
-    Red4.ChangeDutyCycle(10)
-    Red5.ChangeDutyCycle(5) 
-    
-  elif dist_to_del<= 1200 & dist_to_del> 900:
-    Green1.ChangeDutyCycle(75)
-    Green2.ChangeDutyCycle(70)
-    Green3.ChangeDutyCycle(65)
-    Green4.ChangeDutyCycle(60)
-    Green5.ChangeDutyCycle(60)
-    Red1.ChangeDutyCycle(20)
-    Red2.ChangeDutyCycle(15)
-    Red3.ChangeDutyCycle(15)
-    Red4.ChangeDutyCycle(10)
-    Red5.ChangeDutyCycle(10) 
-
-  elif dist_to_del<= 1500 & dist_to_del> 1200 :
-    Green1.ChangeDutyCycle(65)
-    Green2.ChangeDutyCycle(60)
-    Green3.ChangeDutyCycle(55)
-    Green4.ChangeDutyCycle(55)
-    Green5.ChangeDutyCycle(50)
-    Red1.ChangeDutyCycle(30)
-    Red2.ChangeDutyCycle(30)
-    Red3.ChangeDutyCycle(25)
-    Red4.ChangeDutyCycle(25)
-    Red5.ChangeDutyCycle(20) 
-    
-  elif dist_to_del<= 1800 and dist_to_del> 1500:
-    Green1.ChangeDutyCycle(55)
-    Green2.ChangeDutyCycle(55)
-    Green3.ChangeDutyCycle(55)
-    Green4.ChangeDutyCycle(57)
-    Green5.ChangeDutyCycle(55)
-    Red1.ChangeDutyCycle(40)
-    Red2.ChangeDutyCycle(35)
-    Red3.ChangeDutyCycle(30)
-    Red4.ChangeDutyCycle(25)
-    Red5.ChangeDutyCycle(20) 
-    
-  elif dist_to_del<= 2100 and dist_to_del> 1800:
-    Green1.ChangeDutyCycle(50)
-    Green2.ChangeDutyCycle(50)
-    Green3.ChangeDutyCycle(50)
-    Green4.ChangeDutyCycle(50)
-    Green5.ChangeDutyCycle(50)
-    Red1.ChangeDutyCycle(50)
-    Red2.ChangeDutyCycle(50)
-    Red3.ChangeDutyCycle(50)
-    Red4.ChangeDutyCycle(50)
-    Red5.ChangeDutyCycle(50) 
-    
-  elif dist_to_del<= 2400 and dist_to_del> 2100:
-    Green1.ChangeDutyCycle(40)
-    Green2.ChangeDutyCycle(40)
-    Green3.ChangeDutyCycle(35)
-    Green4.ChangeDutyCycle(35)
-    Green5.ChangeDutyCycle(30)
-    Red1.ChangeDutyCycle(70)
-    Red2.ChangeDutyCycle(70)
-    Red3.ChangeDutyCycle(65)
-    Red4.ChangeDutyCycle(65)
-    Red5.ChangeDutyCycle(60)
-    
-  elif dist_to_del<= 2700 and dist_to_del> 2400 :
-    Green1.ChangeDutyCycle(30)
-    Green2.ChangeDutyCycle(30)
-    Green3.ChangeDutyCycle(25)
-    Green4.ChangeDutyCycle(25)
-    Green5.ChangeDutyCycle(20)
-    Red1.ChangeDutyCycle(80)
-    Red2.ChangeDutyCycle(80)
-    Red3.ChangeDutyCycle(75)
-    Red4.ChangeDutyCycle(75)
-    Red5.ChangeDutyCycle(70)
-    
-  elif dist_to_del<= 3000 and dist_to_del> 2700:
-    Green1.ChangeDutyCycle(20)
-    Green2.ChangeDutyCycle(15)
-    Green3.ChangeDutyCycle(10)
-    Green4.ChangeDutyCycle(10)
-    Green5.ChangeDutyCycle(5)
-    Red1.ChangeDutyCycle(90)
-    Red2.ChangeDutyCycle(93)
-    Red3.ChangeDutyCycle(87)
-    Red4.ChangeDutyCycle(85)
-    Red5.ChangeDutyCycle(80) 
-    
-  elif dist_to_del<= 3300 and dist_to_del> 3000:
-    Green1.ChangeDutyCycle(10)
-    Green2.ChangeDutyCycle(10)
-    Green3.ChangeDutyCycle(5)
-    Green4.ChangeDutyCycle(5)
-    Green5.ChangeDutyCycle(5)
-    Red1.ChangeDutyCycle(100)
-    Red2.ChangeDutyCycle(100)
-    Red3.ChangeDutyCycle(100)
-    Red4.ChangeDutyCycle(95)
-    Red5.ChangeDutyCycle(90)
-  time.sleep(300)
+    time.sleep(2)
